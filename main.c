@@ -86,6 +86,9 @@ static int run_test(void)
 		tx_buf = (char *) malloc((chunk_size + 1) * sizeof(char)); // allocating chunk
 		size_t n_transx = file_len / chunk_size; // number of transactions
 		
+		if(file_len % chunk_size != 0) 
+			n_transx++;
+	
 		for (size_t itx = 0; itx < n_transx; itx++) {
 			// clean tx buffer 
 			for (size_t i = 0; i < chunk_size; i++)
@@ -112,7 +115,7 @@ static int run_test(void)
 	} else {
 		// receiving destination filename and size
 		// ------------------------------------------
-		ret = ft_get_rx_comp(rx_seq);
+		ret = ft_get_rx_comp(rx_seq++);
 		if (ret)
 			return ret;
 
@@ -129,7 +132,7 @@ static int run_test(void)
                 for (size_t i = 0; i < rx_size; i++)
                         rx_buf[i] = '\0';
 
-		ret = ft_get_rx_comp(rx_seq);
+		ret = ft_get_rx_comp(rx_seq++);
                 if (ret)
                         return ret;
 
@@ -141,19 +144,24 @@ static int run_test(void)
 		// ------------------------------------------
 		
 		size_t n_transx = file_len / chunk_size;
+		
+		if( file_len % chunk_size != 0 )
+			n_transx++;
+
 		for (size_t irx = 0; irx < n_transx; irx++) {
 			// clean recv buffer 
 			for (size_t i = 0; i < chunk_size; i++)
 				rx_buf[i] = '\0';
 
-			ret = ft_get_rx_comp(rx_seq);                                              
+			ret = ft_get_rx_comp(rx_seq++);
 			if (ret)                                                               
         	                return ret;
 
-			fprintf(stdout, "Received data from Client: %s\n", (char *) rx_buf);
-		
+			// fprintf(stdout, "Received data from Client: %s\n", (char *) rx_buf);
+			fprintf(stdout, "Received data from Client: #%d\n", irx );		
+
 			errno = 0;
-			fwrite((char *)rx_buf, chunk_size + 1, 1, dst_file_ptr);		
+			fwrite((char *)rx_buf, chunk_size, 1, dst_file_ptr);		
 		}
 		
 		fclose(dst_file_ptr);
