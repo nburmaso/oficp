@@ -1,10 +1,9 @@
 language: c
 
+dist: focal
+
 compiler:
   - gcc
-
-before_install:
-  - dpkg -L libfabric-dev
 
 install:
   - sudo apt-get update -y
