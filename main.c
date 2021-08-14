@@ -103,14 +103,20 @@ static int run_test(void)
       if (ret)
         return ret;
 
-      ret = ft_get_tx_comp(++tx_seq);
+      ret = ft_get_tx_comp(tx_seq++);
       if (ret)
         return ret;
     }
 
     fclose(file_ptr);
 
-    fprintf(stdout, "Received a completion event for RMA write\n");
+    // waiting for finalization message
+    // ------------------------------------------
+    ret = ft_get_rx_comp(rx_seq++);
+    if (ret)
+      return ret;
+
+    fprintf(stdout, "Received data from Server: %s\n", (char*)rx_buf);
   } else {
     // receiving destination filename and size
     // ------------------------------------------
@@ -164,6 +170,25 @@ static int run_test(void)
     }
 
     fclose(dst_file_ptr);
+
+    // sending a finalization message
+    // ------------------------------------------
+    char* fin_message = "Success: end of transmission";
+    size_t msg_size = strlen(fin_message);
+    if (snprintf(tx_buf, tx_size, "%s", fin_message) >= tx_size) {
+      fprintf(stderr, "Transmit buffer too small.\n");
+      return -FI_ETOOSMALL;
+    }
+
+    ret = fi_write(ep, tx_buf, msg_size, mr_desc,
+                   remote_fi_addr, remote.addr, remote.key,
+                   &fi_ctx_write);
+    if (ret)
+      return ret;
+
+    ret = ft_get_tx_comp(tx_seq++);
+    if (ret)
+      return ret;
   }
 
   return 0;
